@@ -6,19 +6,22 @@ from scipy import stats
 stats.chisqprob=lambda chisq, df: stats.chi2.sf(chisq, df)
 
 
-c=#TODO
+A=np.load('LatentPoints.npy', mmap_mode='r')
+N=A.shape[0]
+D=A.shape[1]
+
+#TODO sigmasq=...
+c=0.01
 beta=0.1
 
-#TODO read the first x
+x=A[0, :].reshape(D, 1)
 K=1
-D=np.shape(x)[0]
 mean=x[np.newaxis, :]
 #mean.shape=(1, D, 1) atm
 sp=np.array([1])
 v=np.array([1])
 p=np.array([1])
-cov=c*(np.identity(D)[np.newaxis, :]) #TODO c is given based on the deviation of the latent points
-e=x-mean
+cov=c*sigmasq*(np.identity(D)[np.newaxis, :])
 
 def create():
     global K
@@ -53,8 +56,8 @@ def update():
     omega=post/sp
     deltamean=omega.reshape(K, 1, 1)*e
     mean=mean+deltamean
-    e=x-mean
-    cov=((np.ones(K)-omega).reshape(K, 1, 1)*cov)+(omega.reshape(K, 1, 1)*(e@np.transpose(e, (0, 2, 1))))-(deltamean@np.transpose(deltamean, (0, 2, 1)))
+    estar=x-mean
+    cov=((np.ones(K)-omega).reshape(K, 1, 1)*cov)+(omega.reshape(K, 1, 1)*(estar@np.transpose(estar, (0, 2, 1))))-(deltamean@np.transpose(deltamean, (0, 2, 1)))
 
     #x.shape=(D, 1)
     #e.shape=(K, D, 1)
@@ -68,9 +71,11 @@ def update():
     #deltamean.shape=(K, D, 1)
     #mean.shape=(K, D, 1)
     #cov.shape=(K, D, D)
-    
-while #TODO can read x:
-    #TODO read x
+
+n=1
+while n<N :
+    x=A[n, :].reshape(D, 1)
+    e=x-mean
     d2M=(np.transpose(e, (0, 2, 1))@inv(cov)@e).reshape(K,)
     if stats.chisqprob(np.amin(d2M, axis=0), D)>1-beta :
         update()
