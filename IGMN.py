@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.linang import inv
+from numpy.linalg import inv
 from numpy.linalg import det
 import pandas as pd
 from scipy import stats
