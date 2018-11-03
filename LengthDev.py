@@ -1,16 +1,19 @@
 import numpy as np
 
 
-A=np.load('LatentPoints.npy', mmap_mode='r')
+A=np.load('latent_points.npy', mmap_mode='r')
 N=A.shape[0]
 D=A.shape[1]
+
+#print(N)
+#print(D)
 
 #inic
 mu_c=np.zeros(D)
 S=0
 n=0
 
-while n<N :
+while n<N:
     #read a row
     x=A[n]
 
