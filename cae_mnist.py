@@ -1,6 +1,8 @@
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Flatten, Reshape
 from keras.models import Model
 from keras import backend as K
+from keras.datasets import mnist
+import numpy as np
 
 latent_dim=6
 
@@ -31,9 +33,6 @@ autoencoder = Model(input_img, decoded)
 autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
 
 encoder = Model(input_img, encoded)
-
-from keras.datasets import mnist
-import numpy as np
 
 (x_train, _), (x_test, _) = mnist.load_data()
 
