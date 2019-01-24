@@ -43,39 +43,33 @@ autoencoder.load_weights("autoencoder_mnist.h5")
 
 encoder = Model(input_img, encoded)
 
-#mean=(C, D, 1)
+#mean=(C, D, 1): az egyes komponensek atlaga oszlopvektorkent
 mean = np.load("red_mean.npy")
-#cov=(C, D, D)
+#cov=(C, D, D): az egyes komponensek kovariancia matrixa
 cov = np.load("red_cov.npy")
 mean = mean.astype('float32')
 cov = cov.astype('float32')
 
-#invcov=(1, C, D, D)
+#invcov=(1, C, D, D): a kovariancia matrixok inverzei
 invcov = K.expand_dims(K.tf.constant(inv(cov)), axis=0)
-#dets=(1, C, 1, 1)
+#dets=(1, C, 1, 1): a kovariancia matrixok determinansainak konstans fuggvenye (a komponensek surusegfuggvenyehet)
 dets = K.expand_dims(K.expand_dims(K.expand_dims(K.tf.constant(1. / np.sqrt(2 * np.pi * det(cov))), axis=0), axis=-1), axis=-1)
-#mean_tens=(1, C, D, 1)
+#mean_tens=(1, C, D, 1): az atlagok tenzorositva
 mean_tens = K.expand_dims(K.tf.constant(mean), axis=0)
-#invcov = K.tf.constant(inv(cov)) #shape=(C, D, D)
-#dets = K.expand_dims(K.expand_dims(K.tf.constant(1. / np.sqrt(2 * np.pi * det(cov))), axis=-1), axis=-1) #shape=(C, 1, 1)
-#mean_tens = K.tf.constant(mean) #shape=(C, D, 1)
-#print(invcov, dets, mean_tens)
 
 
 def mixture_loss(y_true):
-    #y_lat=(batch_size, 1, D, 1)
-    y_lat = K.expand_dims(K.expand_dims(y_true, axis=-2), axis=-1) #shape=(batch_size, 1, D, 1)
-    #print('y_true', y_true)
-    #print('y_true[1]', y_true[1])
-    #print('y_true[0]', y_true[0])
-    #print('y_lat', y_lat)
-    #probs=(batch_size, C)
-    probs = K.tf.squeeze(dets * K.exp(-0.5 * K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov @ (y_lat - mean_tens)), axis=[-2, -1])
-    return K.sum(probs, axis=-1)
-
-
-#def custom_loss(y_true, y_pred):
-#    return K.mean(K.binary_crossentropy(y_true[1], y_pred[1]), axis=-1) + (mu * mixture_loss(y_true))
+    #y_lat=(batch_size, 1, D, 1): latens pontok
+    y_lat = K.expand_dims(K.expand_dims(y_true, axis=-2), axis=-1)
+    print(y_lat)
+    #likel=(batch_size, D): a batch pontjainak josolt likelihood osszeg
+    print(K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]))
+    print(K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov @ (y_lat - mean_tens))
+    print(dets * K.exp(-0.5 * K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov @ (y_lat - mean_tens)))
+    likel = K.tf.squeeze(dets * K.exp(-0.5 * K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov @ (y_lat - mean_tens)), axis=[-2, -1])
+    likel_sum = K.sum(likel, axis=-1)
+    print(likel_sum)
+    return K.sum(likel_sum, axis=-1)
 
 
 custom_loss = losses.binary_crossentropy(input_img, decoded) + mu * mixture_loss(encoded)

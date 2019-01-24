@@ -22,12 +22,17 @@ beta = 0.96
 v_min = 100
 sp_min = 40
 
+#x=(C, 1) column vector of a new latent point
 x = A[0, :].reshape(D, 1)
+#C: number of components
 C = 1
+#mean=(C, D, 1) means of the components as column vectors
 mean = x[np.newaxis, :]
-#mean.shape=(1, D, 1) atm
+#sp=(C,) sum of probabilities for each component
 sp = np.array([1], dtype=np.float64)
+#v=(C,) age of each component
 v = np.array([1], dtype=np.float64)
+#p=(C,)
 p = np.array([1], dtype=np.float64)
 cov = c * sigmasq * (np.identity(D, dtype=np.float64)[np.newaxis, :])
 
@@ -142,10 +147,7 @@ while n < N:
             d2M = np.delete(d2M, j_elim, axis=0)
             sp = np.delete(sp, j_elim, axis=0)
             p = sp / np.sum(sp)
-            # pri = np.exp(-0.5 * d2M) / (np.power(2. * np.pi, D / 2.) * np.sqrt(det(cov)))
-            # post = (pri * p) / np.sum(pri * p)
             mean = np.delete(mean, j_elim, axis=0)
-            # estar = np.delete(estar, j_elim, axis=0)
             cov = np.delete(cov, j_elim, axis=0)
 
             C = C - 1
