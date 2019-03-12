@@ -124,6 +124,7 @@ while n < N:
             print(K.eval(covt))
         [mean, sp, v, p, cov] = sess_update.run([mean_u, sp_u, v_u, p_u, cov_u], feed_dict={d2M_inu:d2M, cov_inu:cov, p_inu:p, v_inu:v, sp_inu:sp, e_inu:e, mean_inu:mean, C_ones_inu:C_ones})
         if n==2:
+            print("----------")
             print(cov)
     else:
         if n < N / 100:

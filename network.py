@@ -9,7 +9,8 @@ from numpy.linalg import det
 
 
 latent_dim = 6
-mu = 1.
+#constant in the custom loss function
+mu = 0.000001
 batch_size = 100
 num_epochs = 50
 
@@ -25,7 +26,6 @@ x = MaxPooling2D((2, 2), padding='same')(x)
 
 x = Flatten()(x)
 encoded = Dense(latent_dim, activation='relu')(x)
-
 x = Dense(4*4*8, activation='relu')(encoded)
 x = Reshape((4, 4, 8))(x)
 x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
@@ -43,36 +43,36 @@ autoencoder.load_weights("autoencoder_mnist.h5")
 
 encoder = Model(input_img, encoded)
 
-#mean=(C, D, 1): az egyes komponensek atlaga oszlopvektorkent
+#load the tensor containing the mean of the components of the gaussian mixture, shape=(C, D, 1)
 mean = np.load("red_mean.npy")
-#cov=(C, D, D): az egyes komponensek kovariancia matrixa
+#load the tensor containing the cov matrices of the components, shape=(C, D, D)
 cov = np.load("red_cov.npy")
 mean = mean.astype('float32')
 cov = cov.astype('float32')
 
-#invcov=(1, C, D, D): a kovariancia matrixok inverzei
+#inverses of the covariance matrices of the components ,shape=(1, C, D, D)
 invcov = K.expand_dims(K.tf.constant(inv(cov)), axis=0)
-#dets=(1, C, 1, 1): a kovariancia matrixok determinansainak konstans fuggvenye (a komponensek surusegfuggvenyehet)
+#constant function of the determinants of the cov matrices, shape=(1, C, 1, 1)
 dets = K.expand_dims(K.expand_dims(K.expand_dims(K.tf.constant(1. / np.sqrt(2 * np.pi * det(cov))), axis=0), axis=-1), axis=-1)
-#mean_tens=(1, C, D, 1): az atlagok tenzorositva
+#shape=(1, C, D, 1)
 mean_tens = K.expand_dims(K.tf.constant(mean), axis=0)
 
 
 def mixture_loss(y_true):
-    #y_lat=(batch_size, 1, D, 1): latens pontok
+
+    #latent points in the batch, shape=(batch_size, 1, D, 1)
     y_lat = K.expand_dims(K.expand_dims(y_true, axis=-2), axis=-1)
-    print(y_lat)
-    #likel=(batch_size, D): a batch pontjainak josolt likelihood osszeg
-    print(K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]))
-    print(K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov @ (y_lat - mean_tens))
-    print(dets * K.exp(-0.5 * K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov @ (y_lat - mean_tens)))
-    likel = K.tf.squeeze(dets * K.exp(-0.5 * K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov @ (y_lat - mean_tens)), axis=[-2, -1])
+    invcov_bs = K.repeat_elements(invcov, batch_size, axis=0)
+    #print(K.dot K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov)
+    #likelihoods of the batch points, shape=(batch_size, D)
+    likel = K.tf.squeeze(dets * K.exp(-0.5 * K.tf.transpose(y_lat - mean_tens, perm=[0, 1, 3, 2]) @ invcov_bs @ (y_lat - mean_tens)), axis=[-2, -1])
+    #sum of these likelihoods for the batch
     likel_sum = K.sum(likel, axis=-1)
-    print(likel_sum)
     return K.sum(likel_sum, axis=-1)
 
 
-custom_loss = losses.binary_crossentropy(input_img, decoded) + mu * mixture_loss(encoded)
+#using a linear combination of the binary crossentropy and the likelihood sum makes sure that the model doesn't collapse but the points are drawn towards the component centers
+custom_loss = losses.binary_crossentropy(input_img, decoded) - mu * mixture_loss(encoded)
 #custom_loss = losses.binary_crossentropy(input_img, decoded)
 autoencoder.add_loss(custom_loss)
 
@@ -85,6 +85,7 @@ x_test = x_test.astype('float32') / 255.
 x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))  # adapt this if using `channels_first` image data format
 x_test = np.reshape(x_test, (len(x_test), 28, 28, 1))  # adapt this if using `channels_first` image data format
 
+#train the model
 autoencoder.fit(x_train,
                 epochs=num_epochs,
                 batch_size=batch_size,
@@ -92,6 +93,7 @@ autoencoder.fit(x_train,
                 #validation_data=(x_test, x_test)
                 )
 
+#save the latent points of the trained model
 np.save("latent_points_network", encoder.predict(x_train))
 
 # serialize model to JSON

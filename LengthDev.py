@@ -1,16 +1,24 @@
 import numpy as np
 
 
-A=np.load('LatentPoints.npy', mmap_mode='r')
+#this program calculates the squared (L2) deviation of a point set
+
+#A=np.load('latent_points.npy', mmap_mode='r')
+A=np.load('latent_points_network_1m.npy', mmap_mode='r')
+#number of points
 N=A.shape[0]
+#latent dim
 D=A.shape[1]
+
+#print(N)
+#print(D)
 
 #inic
 mu_c=np.zeros(D)
 S=0
 n=0
 
-while n<N :
+while n<N:
     #read a row
     x=A[n]
 

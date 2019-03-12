@@ -2,6 +2,8 @@ import math
 import numpy as np
 from numpy.random import multivariate_normal
 
+
+#testing the IGMN code for simple generated gaussian mixture with known parameters
 mean = np.array([[0, 0], [100, 0], [0, 100]])
 cov = ([[[1, 0], [0, 1]], [[1, 0], [0, 2]], [[3 / 2, -1 / 2], [-1 / 2, 3 / 2]]])
 

@@ -6,6 +6,8 @@ import numpy as np
 
 latent_dim=6
 
+#create a convolutional autoencoder
+
 input_img = Input(shape=(28, 28, 1))  # adapt this if using `channels_first` image data format
 
 x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
